@@ -2,17 +2,24 @@ const express = require("express");
 const { protect } = require("../middlewares/authMiddleware");
 
 const {
-  register,
+  addUser,
   login,
-  getUserInfo,
   getAllUsers,
+  updateUserRole,
+  deleteUser,
 } = require("../controllers/authController");
+
+const {
+  isAdmin,
+  isSuperAdmin,
+} = require("../middlewares/AdminAuthorityMiddleware");
 
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/add-user", protect, isAdmin, addUser); // ADMIN & SUPERADMIN
+router.put("/update-role", protect, isAdmin, updateUserRole); // ADMIN & SUPERADMIN
+router.delete("/delete-user", protect, isAdmin, deleteUser); // ADMIN & SUPERADMIN
 router.post("/login", login);
-// router.get("/getUser", protect, getUserInfo);
-router.get("/get-all-users", protect, getAllUsers);
+router.get("/get-all-users", protect, isAdmin, getAllUsers);
 
 module.exports = router;
