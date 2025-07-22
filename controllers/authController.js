@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
 // RegisterUser
@@ -41,29 +41,62 @@ exports.register = async (req, res) => {
   }
 };
 
+// Logout endpoint
+exports.logout = (req, res) => {
+  res.clearCookie("token", { path: "/" });
+  res.status(200).json({ message: "Logged out" });
+};
+
+// 'Me' endpoint'i (oturumdaki kullanıcıyı döner)
+exports.me = async (req, res) => {
+  console.log("Incoming request to /me endpoint");
+
+  console.log("req.cookies:", req.cookies);
+  const token = req.cookies.token;
+  if (!token) return res.status(401).json({ message: "Not authenticated" });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch {
+    res.status(401).json({ message: "Invalid token" });
+  }
+};
+
 // Login User
 exports.login = async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
+  if (!email || !password)
     return res.status(400).json({ message: "All fields are required." });
-  }
 
   try {
     const user = await User.findOne({ email });
-
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user || !(await user.comparePassword(password)))
       return res.status(400).json({ message: "Invalid credentials" });
-    }
+
+    const token = generateToken(user._id);
+
+    // JWT'yi HTTPOnly cookie olarak yaz
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
 
     res.status(200).json({
       id: user._id,
-      user,
-      token: generateToken(user._id),
+      user: {
+        _id: user._id,
+        email: user.email,
+        role: user.role,
+      },
+      message: "Giriş başarılı.",
     });
   } catch (error) {
-    res.status(500).json({ message: "Error login user", error: error.message });
-    console.log(error);
+    res.status(500).json({ message: "Giriş başarısız.", error: error.message });
   }
 };
 

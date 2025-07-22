@@ -3,6 +3,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./config/db");
 const apiLimiter = require("./middlewares/rateLimiter");
 const authRoutes = require("./routes/authRoutes");
@@ -13,14 +14,16 @@ const app = express();
 
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "*",
+    origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true, // Allow cookies to be sent
   })
 );
 app.use(apiLimiter);
 
 app.use(express.json());
+app.use(cookieParser());
 connectDB();
 
 // Auth routes
