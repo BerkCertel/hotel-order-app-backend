@@ -5,118 +5,86 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
 };
 
-// RegisterUser
-exports.register = async (req, res) => {
-  console.log("incoming request:", req.body);
+// // RegisterUser
+// exports.register = async (req, res) => {
+//   console.log("incoming request:", req.body);
+//   const { email, password } = req.body;
+
+//   // Validation : check for missing fields
+
+//   if (!email || !password) {
+//     return res.status(400).json({ message: "All Fields are required !" });
+//   }
+
+//   try {
+//     const existingUser = await User.findOne({ email });
+
+//     if (existingUser) {
+//       return res.status(400).json({ message: "Email already in use." });
+//     }
+
+//     const user = await User.create({
+//       email,
+//       password,
+//     });
+
+//     res.status(201).json({
+//       id: user._id,
+//       user,
+//       token: generateToken(user._id),
+//     });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ message: "Error registering user", error: error.message });
+//     console.log(error);
+//   }
+// };
+
+// Login User
+exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  // Validation : check for missing fields
-
   if (!email || !password) {
-    return res.status(400).json({ message: "All Fields are required !" });
+    return res.status(400).json({ message: "All fields are required." });
   }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-    if (existingUser) {
-      return res.status(400).json({ message: "Email already in use." });
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const user = await User.create({
-      email,
-      password,
-    });
-
-    res.status(201).json({
+    res.status(200).json({
       id: user._id,
       user,
       token: generateToken(user._id),
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Error registering user", error: error.message });
+    res.status(500).json({ message: "Error login user", error: error.message });
     console.log(error);
   }
 };
 
-// Logout endpoint
-exports.logout = (req, res) => {
-  res.clearCookie("token", { path: "/" });
-  res.status(200).json({ message: "Logged out" });
-};
-
-// 'Me' endpoint'i (oturumdaki kullanıcıyı döner)
-exports.me = async (req, res) => {
-  console.log("Incoming request to /me endpoint");
-
-  console.log("req.cookies:", req.cookies);
-  const token = req.cookies.token;
-  if (!token) return res.status(401).json({ message: "Not authenticated" });
+// Get User Info
+exports.getUserInfo = async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
-    res.json(user);
-  } catch {
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
+    const user = await User.findById(req.user.id).select("-password");
 
-// Login User
-exports.login = async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ message: "All fields are required." });
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
 
-  try {
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password)))
-      return res.status(400).json({ message: "Invalid credentials" });
-
-    const token = generateToken(user._id);
-
-    // JWT'yi HTTPOnly cookie olarak yaz
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    res.status(200).json({
-      id: user._id,
-      user: {
-        _id: user._id,
-        email: user.email,
-        role: user.role,
-      },
-      message: "Giriş başarılı.",
-    });
+    res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ message: "Giriş başarısız.", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Error regşstering user", error: error.message });
+    console.log(error);
   }
 };
 
-// // Get User Info
-// exports.getUserInfo = async (req, res) => {
-//   try {
-//     const user = await User.findById(req.user.id).select("-password");
-
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found." });
-//     }
-
-//     res.status(200).json(user);
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ message: "Error regşstering user", error: error.message });
-//     console.log(error);
-//   }
-// };
 // Tüm kullanıcıları getir (yalnızca admin/superadmin)
 exports.getAllUsers = async (req, res) => {
   try {
@@ -154,8 +122,15 @@ exports.addUser = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "Email zaten kullanılıyor." });
     }
-    const user = await User.create({ email, password, role });
-    res.status(201).json({ id: user._id, user });
+    const user = await User.create({
+      email,
+      password,
+      role,
+    });
+
+    res
+      .status(201)
+      .json({ id: user._id, user, token: generateToken(user._id) });
   } catch (error) {
     res
       .status(500)
@@ -180,15 +155,18 @@ exports.updateUserRole = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "Kullanıcı bulunamadı." });
 
+    // Yeni rol SUPERADMIN olamaz
+    if (newRole === "SUPERADMIN") {
+      return res
+        .status(403)
+        .json({ message: "Kullanıcı SUPERADMIN atanamaz!" });
+    }
+
     // SUPERADMIN'in rolü değiştirilemez
     if (user.role === "SUPERADMIN") {
       return res
         .status(403)
         .json({ message: "SUPERADMIN'in rolü değiştirilemez!" });
-    }
-    // Yeni rol SUPERADMIN olamaz
-    if (newRole === "SUPERADMIN") {
-      return res.status(403).json({ message: "Yeni SUPERADMIN atanamaz!" });
     }
 
     user.role = newRole;
@@ -201,7 +179,7 @@ exports.updateUserRole = async (req, res) => {
   }
 };
 
-// Kullanıcı sil (yalnızca ADMIN veya SUPERADMIN)
+// Kullanıcı sil (yalnızca SUPERADMIN)
 // SUPERADMIN silinemez!
 exports.deleteUser = async (req, res) => {
   const { userId } = req.body;

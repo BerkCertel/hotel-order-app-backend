@@ -9,6 +9,7 @@ const apiLimiter = require("./middlewares/rateLimiter");
 const authRoutes = require("./routes/authRoutes");
 
 const app = express();
+app.use(express.json());
 
 // Middleware to handle Cors
 
@@ -22,7 +23,6 @@ app.use(
 );
 app.use(apiLimiter);
 
-app.use(express.json());
 app.use(cookieParser());
 connectDB();
 
