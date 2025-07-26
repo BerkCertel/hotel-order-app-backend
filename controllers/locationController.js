@@ -1,4 +1,4 @@
-import Location from "../models/Location";
+const Location = require("../models/Location.js");
 const QrCodeSchema = require("../models/QrCode.js");
 const QrCodeLib = require("qrcode"); // QR kod kütüphanen
 const cloudinary = require("../utils/cloudinary"); // Cloudinary fonksiyonun
@@ -81,7 +81,7 @@ exports.updateLocation = async (req, res) => {
     }
 
     // 2. Bu location'a bağlı QRCode'ları bul
-    const qrCodes = await QrCode.find({ location: id });
+    const qrCodes = await QrCodeSchema.find({ location: id });
 
     for (const qr of qrCodes) {
       // 3. Eski görseli sil

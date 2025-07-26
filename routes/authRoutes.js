@@ -1,6 +1,6 @@
 const express = require("express");
 const { protect } = require("../middlewares/authMiddleware");
-
+const { isSuperAdmin } = require("../middlewares/AdminAuthorityMiddleware");
 const {
   addUser,
   login,
@@ -9,11 +9,6 @@ const {
   deleteUser,
   getUser,
 } = require("../controllers/authController");
-
-const {
-  isAdmin,
-  isSuperAdmin,
-} = require("../middlewares/AdminAuthorityMiddleware");
 
 const router = express.Router();
 
