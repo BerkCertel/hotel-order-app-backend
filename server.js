@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const apiLimiter = require("./middlewares/rateLimiter");
 const authRoutes = require("./routes/authRoutes");
 const qrcodeRoutes = require("./routes/qrCodeRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 
 const app = express();
 app.use(express.json());
@@ -30,6 +31,7 @@ connectDB();
 // Auth routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/qrcode", qrcodeRoutes);
+app.use("/api/v1/location", locationRoutes);
 // app.use("/api/v1/qr", qrRoutes);
 
 // Serve uploads folder

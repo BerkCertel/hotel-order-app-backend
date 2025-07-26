@@ -6,14 +6,14 @@ const {
   isSuperAdmin,
 } = require("../middlewares/AdminAuthorityMiddleware");
 const {
-  getAllLocations,
   createLocation,
-  deleteLocation,
+  getAllLocations,
   updateLocation,
+  deleteLocation,
 } = require("../controllers/locationController");
 
 router.delete("/delete-location", protect, isAdmin, deleteLocation);
-router.get("/get-all-locations", protect, getAllLocations);
+router.get("/get-all-locations", protect, isAdmin, getAllLocations);
 router.post("/create-location", protect, isAdmin, createLocation);
 router.put("/update-location/:id", protect, isAdmin, updateLocation);
 

@@ -1,7 +1,7 @@
 const Location = require("../models/Location.js");
 const QrCodeSchema = require("../models/QrCode.js");
 const QrCodeLib = require("qrcode"); // QR kod kütüphanen
-const cloudinary = require("../utils/cloudinary"); // Cloudinary fonksiyonun
+const cloudinary = require("../config/cloudinary.js");
 
 // Get all locations
 exports.getAllLocations = async (req, res) => {

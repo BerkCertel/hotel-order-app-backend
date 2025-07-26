@@ -7,18 +7,16 @@ const {
 } = require("../middlewares/AdminAuthorityMiddleware");
 const {
   createQrCode,
-  getQrCode,
   deleteQrCode,
   getAllQrCodes,
   getQRCodesByLocation,
   getQrCodeDataById,
 } = require("../controllers/qrCodeController");
 
-router.delete("/delete-qrcode", protect, isAdmin, deleteQrCode);
-router.get("/get-qrcode", protect, isSuperAdmin, getQrCode);
+router.delete("/delete-qrcode/:id", protect, isAdmin, deleteQrCode);
 router.get("/get-all-qrcodes", protect, getAllQrCodes);
 router.post("/get-qrcodes-by-location", protect, getQRCodesByLocation);
 router.post("/create-qrcode", protect, isAdmin, createQrCode);
-router.get("/get-qrcode-data-by-id", protect, getQrCodeDataById);
+router.get("/get-qrcode/:id", protect, getQrCodeDataById);
 
 module.exports = router;
