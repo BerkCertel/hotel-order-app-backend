@@ -2,7 +2,11 @@ import mongoose from "mongoose";
 
 const LocationSchema = new mongoose.Schema(
   {
-    location: String,
+    location: {
+      type: String,
+      required: true,
+      unique: true,
+    },
   },
   { timestamps: true }
 );

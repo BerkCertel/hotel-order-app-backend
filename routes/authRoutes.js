@@ -7,6 +7,7 @@ const {
   getAllUsers,
   updateUserRole,
   deleteUser,
+  getUser,
 } = require("../controllers/authController");
 
 const {
@@ -21,5 +22,6 @@ router.put("/update-role", protect, isSuperAdmin, updateUserRole); // ADMIN & SU
 router.delete("/delete-user", protect, isSuperAdmin, deleteUser); // ADMIN & SUPERADMIN
 router.post("/login", login);
 router.get("/get-all-users", protect, isSuperAdmin, getAllUsers);
+router.get("/get-user", protect, getUser);
 
 module.exports = router;
