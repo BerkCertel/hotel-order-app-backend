@@ -48,7 +48,12 @@ exports.deleteLocation = async (req, res) => {
     // Ona bağlı QR kodları sil
     await QrCodeSchema.deleteMany({ location: id });
 
-    res.status(200).json({ message: "Location and related QR codes deleted." });
+    res
+      .status(200)
+      .json({
+        deletedLocation: location,
+        message: "Location and related QR codes deleted.",
+      });
   } catch (error) {
     res
       .status(500)

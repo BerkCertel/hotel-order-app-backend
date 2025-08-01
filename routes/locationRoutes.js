@@ -12,7 +12,7 @@ const {
   deleteLocation,
 } = require("../controllers/locationController");
 
-router.delete("/delete-location", protect, isAdmin, deleteLocation);
+router.delete("/delete-location/:id", protect, isAdmin, deleteLocation);
 router.get("/get-all-locations", protect, isAdmin, getAllLocations);
 router.post("/create-location", protect, isAdmin, createLocation);
 router.put("/update-location/:id", protect, isAdmin, updateLocation);

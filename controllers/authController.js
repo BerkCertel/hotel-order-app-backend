@@ -117,6 +117,12 @@ exports.addUser = async (req, res) => {
     return res.status(403).json({ message: "SUPERADMIN dışarıdan atanamaz!" });
   }
 
+  if (password.length < 6 || password.length > 20) {
+    return res
+      .status(400)
+      .json({ message: "Şifre 6-20 karakter arasında olmalıdır." });
+  }
+
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
