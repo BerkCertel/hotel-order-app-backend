@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.post("/add-user", protect, isSuperAdmin, addUser); // ADMIN & SUPERADMIN
 router.put("/update-role", protect, isSuperAdmin, updateUserRole); // ADMIN & SUPERADMIN
-router.delete("/delete-user", protect, isSuperAdmin, deleteUser); // ADMIN & SUPERADMIN
+router.delete("/delete-user/:id", protect, isSuperAdmin, deleteUser); // ADMIN & SUPERADMIN
 router.post("/login", login);
 router.get("/get-all-users", protect, isSuperAdmin, getAllUsers);
 router.get("/get-user", protect, getUser);

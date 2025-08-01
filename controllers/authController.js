@@ -188,22 +188,25 @@ exports.updateUserRole = async (req, res) => {
 // Kullanıcı sil (yalnızca SUPERADMIN)
 // SUPERADMIN silinemez!
 exports.deleteUser = async (req, res) => {
-  const { userId } = req.body;
+  const { id } = req.params;
 
-  if (!userId) {
+  console.log(req.user);
+
+  if (!id) {
     return res.status(400).json({ message: "Kullanıcı ID zorunlu." });
   }
-
+  if (id === req.user.id) {
+    return res.status(403).json({ message: "Kendi hesabınızı silemezsiniz." });
+  }
   try {
-    const user = await User.findById(userId);
+    const user = await User.findById(id);
     if (!user)
       return res.status(404).json({ message: "Kullanıcı bulunamadı." });
 
     if (user.role === "SUPERADMIN") {
       return res.status(403).json({ message: "SUPERADMIN silinemez!" });
     }
-
-    await user.remove();
+    await User.deleteOne({ _id: id });
     res.status(200).json({ message: "Kullanıcı silindi." });
   } catch (error) {
     res
