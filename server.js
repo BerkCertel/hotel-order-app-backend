@@ -9,6 +9,8 @@ const apiLimiter = require("./middlewares/rateLimiter");
 const authRoutes = require("./routes/authRoutes");
 const qrcodeRoutes = require("./routes/qrCodeRoutes");
 const locationRoutes = require("./routes/locationRoutes");
+const subcategoryRoutes = require("./routes/subcategoryRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 const app = express();
 app.use(express.json());
@@ -32,7 +34,8 @@ connectDB();
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/qrcode", qrcodeRoutes);
 app.use("/api/v1/location", locationRoutes);
-// app.use("/api/v1/qr", qrRoutes);
+app.use("/api/v1/subcategory", subcategoryRoutes);
+app.use("/api/v1/category", categoryRoutes);
 
 // Serve uploads folder
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

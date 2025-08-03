@@ -1,10 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect } = require("../middlewares/authMiddleware");
-const {
-  isAdmin,
-  isSuperAdmin,
-} = require("../middlewares/AdminAuthorityMiddleware");
+const { isAdmin } = require("../middlewares/AdminAuthorityMiddleware");
 const {
   createLocation,
   getAllLocations,
