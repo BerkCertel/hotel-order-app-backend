@@ -127,3 +127,18 @@ exports.updateSubcategory = async (req, res) => {
       .json({ message: "Failed to update subcategory", error: error.message });
   }
 };
+
+// Get subcategories by category
+exports.getSubcategoriesByCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const subcategories = await Subcategory.find({ category: id }).populate(
+      "category"
+    );
+    res.status(200).json(subcategories);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to get subcategories", error: error.message });
+  }
+};

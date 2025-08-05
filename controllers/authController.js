@@ -190,8 +190,6 @@ exports.updateUserRole = async (req, res) => {
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
 
-  console.log(req.user);
-
   if (!id) {
     return res.status(400).json({ message: "Kullanıcı ID zorunlu." });
   }

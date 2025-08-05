@@ -1,4 +1,5 @@
 const Category = require("../models/Category.js");
+const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
 
 // Get all categories
@@ -113,12 +114,10 @@ exports.updateCategory = async (req, res) => {
     category.publicId = publicId;
     await category.save();
 
-    res
-      .status(200)
-      .json({
-        updatedCategory: category,
-        message: "Category updated successfully.",
-      });
+    res.status(200).json({
+      updatedCategory: category,
+      message: "Category updated successfully.",
+    });
   } catch (error) {
     res
       .status(500)

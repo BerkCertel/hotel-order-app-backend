@@ -9,6 +9,7 @@ const {
   deleteSubcategory,
   getAllSubcategories,
   updateSubcategory,
+  getSubcategoriesByCategory,
 } = require("../controllers/subcategoryController.js");
 
 // Tüm alt kategoriler
@@ -31,5 +32,7 @@ router.put(
 );
 // Alt kategori sil
 router.delete("/delete-subcategory/:id", protect, isAdmin, deleteSubcategory);
+
+router.get("/by-category/:id", protect, isAdmin, getSubcategoriesByCategory);
 
 module.exports = router;
