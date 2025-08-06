@@ -8,6 +8,7 @@ const {
   updateUserRole,
   deleteUser,
   getUser,
+  logout,
 } = require("../controllers/authController");
 
 const router = express.Router();
@@ -18,5 +19,6 @@ router.delete("/delete-user/:id", protect, isSuperAdmin, deleteUser); // ADMIN &
 router.post("/login", login);
 router.get("/get-all-users", protect, isSuperAdmin, getAllUsers);
 router.get("/get-user", protect, getUser);
+router.post("/logout", logout); // Yeni logout endpoint'i
 
 module.exports = router;

@@ -42,6 +42,33 @@ const generateToken = (id) => {
 // };
 
 // Login User
+// exports.login = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password) {
+//     return res.status(400).json({ message: "All fields are required." });
+//   }
+
+//   try {
+//     const user = await User.findOne({ email });
+
+//     if (!user || !(await user.comparePassword(password))) {
+//       return res.status(400).json({ message: "Invalid credentials" });
+//     }
+
+//     res.status(200).json({
+//       id: user._id,
+//       user,
+//       token: generateToken(user._id),
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error login user", error: error.message });
+//     console.log(error);
+//   }
+// };
+
+// LOGİN WİTH COOKİE
+
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -56,15 +83,37 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    const token = generateToken(user._id);
+
+    // YENİ: Cookie olarak JWT gönder!
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // prod'da HTTPS zorunlu
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
+      path: "/",
+    });
+
     res.status(200).json({
       id: user._id,
       user,
-      token: generateToken(user._id),
+      // token artık JSON'da yok!
     });
   } catch (error) {
     res.status(500).json({ message: "Error login user", error: error.message });
     console.log(error);
   }
+};
+
+// Logout User
+exports.logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+  res.status(200).json({ message: "Logout successful" });
 };
 
 // Get User Info

@@ -16,6 +16,10 @@ exports.getAllLocations = async (req, res) => {
 
 // Create a new location
 exports.createLocation = async (req, res) => {
+  if (!req.body || !req.body.location) {
+    return res.status(400).json({ message: "Location is required" });
+  }
+
   try {
     const { location } = req.body;
     if (!location) {
@@ -26,7 +30,7 @@ exports.createLocation = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "Failed to create location", error: error.message });
+      .json({ message: "Failed to create location.", error: error.message });
   }
 };
 
@@ -48,12 +52,10 @@ exports.deleteLocation = async (req, res) => {
     // Ona bağlı QR kodları sil
     await QrCodeSchema.deleteMany({ location: id });
 
-    res
-      .status(200)
-      .json({
-        deletedLocation: location,
-        message: "Location and related QR codes deleted.",
-      });
+    res.status(200).json({
+      deletedLocation: location,
+      message: "Location and related QR codes deleted.",
+    });
   } catch (error) {
     res
       .status(500)
