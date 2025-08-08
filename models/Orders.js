@@ -1,22 +1,33 @@
 const mongoose = require("mongoose");
 
-const OrdersSchema = new mongoose.Schema(
+const OrderItemSchema = new mongoose.Schema(
   {
-    qrId: String,
-    location: String,
-    tableName: String,
-    guestName: String,
-    roomNumber: String,
-    items: [
-      {
-        name: String,
-        quantity: Number,
-        price: Number,
-      },
-    ],
-    createdAt: { type: Date, default: Date.now },
+    subcategory: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subcategory",
+      required: true,
+    },
+    name: { type: String, required: true },
+    quantity: { type: Number, required: true },
+  },
+  { _id: false }
+);
+
+const OrderSchema = new mongoose.Schema(
+  {
+    location: { type: String, required: true },
+    label: { type: String, required: true },
+    items: [OrderItemSchema],
+    status: {
+      type: String,
+      enum: ["pending", "completed"],
+      default: "pending",
+    },
+    roomNumber: { type: String, required: true },
+    birthDate: { type: String, required: true },
+    customerName: { type: String }, // opsiyonel
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Orders", OrdersSchema);
+module.exports = mongoose.model("Order", OrderSchema);
