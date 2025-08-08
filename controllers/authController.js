@@ -1,5 +1,8 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
+const nodemailer = require("nodemailer");
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -68,7 +71,6 @@ const generateToken = (id) => {
 // };
 
 // LOGİN WİTH COOKİE
-
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -235,7 +237,6 @@ exports.updateUserRole = async (req, res) => {
 };
 
 // Kullanıcı sil (yalnızca SUPERADMIN)
-// SUPERADMIN silinemez!
 exports.deleteUser = async (req, res) => {
   const { id } = req.params;
 
@@ -260,4 +261,104 @@ exports.deleteUser = async (req, res) => {
       .status(500)
       .json({ message: "Kullanıcı silinemedi.", error: error.message });
   }
+};
+
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found." });
+  }
+
+  // Token üret ve SHA256 ile hashle
+  const resetToken = crypto.randomBytes(20).toString("hex");
+  user.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+  user.resetPasswordExpire = Date.now() + 15 * 60 * 1000; // 15 dk
+
+  await user.save({ validateBeforeSave: false });
+
+  // Path parametreli link!
+  const passwordUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+  const htmlContent = `
+    <div style="font-family:sans-serif;">
+      <h2>Şifre Sıfırlama Talebi</h2>
+      <p>Şifrenizi değiştirmek için aşağıdaki linke tıklayın:</p>
+      <a href="${passwordUrl}" style="color:blue;">Şifreyi Sıfırla</a>
+      <p>Bu bağlantı 15 dakika geçerlidir.</p>
+      <p>Eğer bu talebi siz yapmadıysanız lütfen dikkate almayın.</p>
+    </div>
+  `;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      service: process.env.EMAIL_SERVICE,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+      secure: true,
+      tls: { rejectUnauthorized: true },
+    });
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: "Şifre Sıfırlama Talebi",
+      html: htmlContent,
+    });
+
+    return res
+      .status(200)
+      .json({ message: "E-posta adresinizi kontrol edin." });
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save({ validateBeforeSave: false });
+    return res
+      .status(500)
+      .json({ message: "Mail gönderilemedi.", error: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  const resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(req.params.token)
+    .digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid or expired token." });
+  }
+
+  user.password = req.body.password; // sadece düz atama!
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+  await user.save(); // burada hash işlemi modeldeki pre('save') ile yapılır
+
+  // Otomatik JWT ile login (cookie setle)
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
+
+  res.cookie("token", token, {
+    httpOnly: true,
+    expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  });
+
+  res.status(200).json({ user });
 };
