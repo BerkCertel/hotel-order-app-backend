@@ -2,11 +2,6 @@ const mongoose = require("mongoose");
 
 const OrderItemSchema = new mongoose.Schema(
   {
-    subcategory: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subcategory",
-      required: true,
-    },
     name: { type: String, required: true },
     quantity: { type: Number, required: true },
   },
@@ -15,17 +10,26 @@ const OrderItemSchema = new mongoose.Schema(
 
 const OrderSchema = new mongoose.Schema(
   {
-    location: { type: String, required: true },
-    label: { type: String, required: true },
     items: [OrderItemSchema],
+    roomNumber: { type: String, required: true },
+    orderUserName: String,
+    qrcodeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "QrCode",
+    },
+    qrcodeLabel: String,
+    location: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Location",
+      required: true,
+    },
     status: {
       type: String,
-      enum: ["pending", "completed"],
+      enum: ["pending", "success", "rejected"],
       default: "pending",
     },
-    roomNumber: { type: String, required: true },
-    birthDate: { type: String, required: true },
-    customerName: { type: String }, // opsiyonel
+    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

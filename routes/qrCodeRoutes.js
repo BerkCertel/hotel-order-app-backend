@@ -8,7 +8,7 @@ const {
   getAllQrCodes,
   getQRCodesByLocation,
   getQrCodeDataById,
-  getAllQrCodesGrouped,
+  // getAllQrCodesGrouped,
 } = require("../controllers/qrCodeController");
 
 router.delete("/delete-qrcode/:id", protect, isAdmin, deleteQrCode);
