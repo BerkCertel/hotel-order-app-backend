@@ -2,7 +2,7 @@ const QrCodeModel = require("../models/QrCode.js"); // Mongoose QR Code modeli
 const QRCodeLib = require("qrcode"); // QR görseli üretici kütüphane
 const cloudinary = require("../config/cloudinary.js");
 const Location = require("../models/Location.js");
-const { mongoose } = require("mongoose");
+const { default: mongoose } = require("mongoose");
 require("dotenv").config();
 
 // Create a new QR code for a location
@@ -108,6 +108,11 @@ exports.getAllQrCodesGrouped = async (req, res) => {
 
 exports.getQrCodeDataById = async (req, res) => {
   const id = req.params.id;
+
+  // ObjectId olup olmadığını kontrol et!
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid QR code ID." });
+  }
 
   if (id === undefined || id === null || id === "") {
     return res.status(400).json({ message: "Invalid QR code ID." });

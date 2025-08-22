@@ -1,5 +1,6 @@
 const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
+const { default: mongoose } = require("mongoose");
 
 // Get all subcategories
 exports.getAllSubcategories = async (req, res) => {
@@ -132,9 +133,26 @@ exports.updateSubcategory = async (req, res) => {
 exports.getSubcategoriesByCategory = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (
+      !id ||
+      !mongoose.Types.ObjectId.isValid(id) ||
+      id.length !== 24 ||
+      id === "" ||
+      id === undefined ||
+      id === null
+    ) {
+      return res.status(400).json({ message: "Invalid category ID." });
+    }
+
     const subcategories = await Subcategory.find({ category: id }).populate(
       "category"
     );
+
+    if (!subcategories || subcategories.length === 0) {
+      return res.status(404).json({ message: "No subcategories found." });
+    }
+
     res.status(200).json(subcategories);
   } catch (error) {
     res
