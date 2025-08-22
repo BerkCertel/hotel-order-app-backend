@@ -3,12 +3,10 @@ const User = require("../models/User");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
-
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-};
+const generateToken = require("../utils/generateToken");
 
 // // RegisterUser
+
 // exports.register = async (req, res) => {
 //   console.log("incoming request:", req.body);
 //   const { email, password } = req.body;
@@ -34,38 +32,12 @@ const generateToken = (id) => {
 //     res.status(201).json({
 //       id: user._id,
 //       user,
-//       token: generateToken(user._id),
+//     token: generateToken(user._id, user.role), // <-- role EKLENDİ!
 //     });
 //   } catch (error) {
 //     res
 //       .status(500)
 //       .json({ message: "Error registering user", error: error.message });
-//     console.log(error);
-//   }
-// };
-
-// Login User
-// exports.login = async (req, res) => {
-//   const { email, password } = req.body;
-
-//   if (!email || !password) {
-//     return res.status(400).json({ message: "All fields are required." });
-//   }
-
-//   try {
-//     const user = await User.findOne({ email });
-
-//     if (!user || !(await user.comparePassword(password))) {
-//       return res.status(400).json({ message: "Invalid credentials" });
-//     }
-
-//     res.status(200).json({
-//       id: user._id,
-//       user,
-//       token: generateToken(user._id),
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: "Error login user", error: error.message });
 //     console.log(error);
 //   }
 // };
@@ -85,7 +57,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.role);
 
     // YENİ: Cookie olarak JWT gönder!
     res.cookie("token", token, {
@@ -99,7 +71,6 @@ exports.login = async (req, res) => {
     res.status(200).json({
       id: user._id,
       user,
-      // token artık JSON'da yok!
     });
   } catch (error) {
     res.status(500).json({ message: "Error login user", error: error.message });
@@ -187,7 +158,7 @@ exports.addUser = async (req, res) => {
 
     res
       .status(201)
-      .json({ id: user._id, user, token: generateToken(user._id) });
+      .json({ id: user._id, user, token: generateToken(user._id, user.role) });
   } catch (error) {
     res
       .status(500)
@@ -348,9 +319,7 @@ exports.resetPassword = async (req, res) => {
   await user.save(); // burada hash işlemi modeldeki pre('save') ile yapılır
 
   // Otomatik JWT ile login (cookie setle)
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
-  });
+  const token = generateToken(user._id, user.role);
 
   res.cookie("token", token, {
     httpOnly: true,
