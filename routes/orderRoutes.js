@@ -13,15 +13,10 @@ const {
 router.post("/create-order", createOrder);
 
 // Sipariş güncelle (status)
-router.patch("/update-order-status/:id", protect, isAdmin, updateOrderStatus);
+router.patch("/update-order-status/:id", protect, updateOrderStatus);
 
 // Lokasyona göre sipariş getir
-router.get(
-  "/get-orders-by-location/:locationId",
-  protect,
-  isAdmin,
-  getOrdersByLocation
-);
+router.get("/get-orders-by-location/:locationId", protect, getOrdersByLocation);
 
 // Tüm siparişleri getir
 router.get("/get-all-orders", protect, isAdmin, getAllOrders);

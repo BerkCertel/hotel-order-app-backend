@@ -13,7 +13,7 @@ const {
 } = require("../controllers/categoryController.js");
 
 // Tüm kategoriler
-router.get("/get-all-categories", protect, isAdmin, getAllCategories);
+router.get("/get-all-categories", protect, getAllCategories);
 // Kategori oluştur (resim upload!)
 router.post(
   "/create-category",
