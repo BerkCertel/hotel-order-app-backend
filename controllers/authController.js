@@ -121,7 +121,7 @@ exports.getAllUsers = async (req, res) => {
 
 // Add User
 exports.addUser = async (req, res) => {
-  const { email, password, role = "USER" } = req.body;
+  const { email, password, role = "USER", locations = [] } = req.body;
   if (!email || !password) {
     return res.status(400).json({ message: "Email ve şifre zorunlu." });
   }
@@ -139,6 +139,13 @@ exports.addUser = async (req, res) => {
     return res.status(403).json({ message: "SUPERADMIN dışarıdan atanamaz!" });
   }
 
+  // USER ise locations zorunlu, ADMIN ise boş olabilir
+  if (role === "USER" && (!locations || locations.length === 0)) {
+    return res
+      .status(400)
+      .json({ message: "USER için en az bir lokasyon atanmalı!" });
+  }
+
   if (password.length < 6 || password.length > 20) {
     return res
       .status(400)
@@ -154,6 +161,7 @@ exports.addUser = async (req, res) => {
       email,
       password,
       role,
+      locations: role === "ADMIN" ? [] : locations, // ADMIN için boş bırak, USER için gelenleri ata
     });
 
     res
@@ -168,7 +176,7 @@ exports.addUser = async (req, res) => {
 
 // Update User Role
 exports.updateUserRole = async (req, res) => {
-  const { userId, newRole } = req.body;
+  const { userId, newRole, newLocations } = req.body;
   if (!userId || !newRole) {
     return res.status(400).json({ message: "Kullanıcı ve yeni rol zorunlu." });
   }
@@ -198,6 +206,7 @@ exports.updateUserRole = async (req, res) => {
     }
 
     user.role = newRole;
+    user.locations = newRole === "ADMIN" ? [] : newLocations || [];
     await user.save();
     res.status(200).json({ message: "Rol güncellendi.", user });
   } catch (error) {

@@ -2,6 +2,7 @@ const Location = require("../models/Location.js");
 const QrCodeSchema = require("../models/QrCode.js");
 const QrCodeLib = require("qrcode"); // QR kod kütüphanen
 const cloudinary = require("../config/cloudinary.js");
+const User = require("../models/User.js");
 
 // Get all locations
 exports.getAllLocations = async (req, res) => {
@@ -10,6 +11,28 @@ exports.getAllLocations = async (req, res) => {
     res.status(200).json(locations);
   } catch (error) {
     console.error("Error fetching locations:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+// Get user locations
+exports.getUserLocations = async (req, res) => {
+  const userId = req.user.id; // Auth middleware ile gelir
+
+  console.log(userId);
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const user = await User.findById(userId).populate("locations");
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    res.status(200).json(user.locations);
+  } catch (error) {
+    console.error("Error fetching user locations:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };

@@ -29,7 +29,6 @@ const OrderSchema = new mongoose.Schema(
       enum: ["pending", "success", "rejected"],
       default: "pending",
     },
-    createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

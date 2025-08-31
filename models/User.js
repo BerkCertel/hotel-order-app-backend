@@ -12,6 +12,12 @@ const UserSchema = new mongoose.Schema(
       default: "USER",
       required: true,
     },
+    locations: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },

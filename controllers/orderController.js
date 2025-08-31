@@ -1,5 +1,7 @@
 const Order = require("../models/Orders");
 const QrCode = require("../models/QrCode");
+const Location = require("../models/Location");
+const User = require("../models/User");
 
 // Sipariş oluştur
 exports.createOrder = async (req, res) => {
@@ -81,12 +83,15 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json(order);
   } catch (e) {
-    res.status(500).json({ message: "Sipariş güncellenemedi" });
+    res.status(500).json({ message: "Sipariş güncellenemedi." });
   }
 };
 
 // Lokasyona göre sipariş getir
 exports.getOrdersByLocation = async (req, res) => {
+  const { locationId } = req.params;
+  const user = req.user;
+
   if (!req.params.locationId) {
     return res.status(400).json({ message: "Location ID is required." });
   }
@@ -106,8 +111,28 @@ exports.getOrdersByLocation = async (req, res) => {
     return res.status(400).json({ message: "Invalid location ID." });
   }
 
+  const locationExists = await Location.findById(locationId);
+  if (!locationExists) {
+    return res
+      .status(404)
+      .json({ message: "Bu ID'de bir lokasyon bulunamadı." });
+  }
+
+  const freshUser = await User.findById(user._id);
+  if (!freshUser) {
+    return res.status(401).json({ message: "Kullanıcı bulunamadı." });
+  }
+
+  if (!["ADMIN", "SUPERADMIN"].includes(freshUser.role)) {
+    const userLocations = (freshUser.locations || []).map((l) => l.toString());
+    if (!userLocations.includes(locationId)) {
+      return res
+        .status(403)
+        .json({ message: "Bu lokasyona erişim yetkiniz yok." });
+    }
+  }
+
   try {
-    const { locationId } = req.params;
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 20;
 

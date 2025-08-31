@@ -33,6 +33,6 @@ router.put(
 // Alt kategori sil
 router.delete("/delete-subcategory/:id", protect, isAdmin, deleteSubcategory);
 
-router.get("/by-category/:id", protect, getSubcategoriesByCategory);
+router.get("/by-category/:id", getSubcategoriesByCategory);
 
 module.exports = router;
