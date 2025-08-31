@@ -4,6 +4,7 @@ const OrderItemSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
     quantity: { type: Number, required: true },
+    price: { type: Number, required: false, default: 0 },
   },
   { _id: false }
 );
@@ -29,6 +30,7 @@ const OrderSchema = new mongoose.Schema(
       enum: ["pending", "success", "rejected"],
       default: "pending",
     },
+    TotalPrice: { type: Number, required: true },
   },
   { timestamps: true }
 );

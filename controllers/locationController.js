@@ -19,8 +19,6 @@ exports.getAllLocations = async (req, res) => {
 exports.getUserLocations = async (req, res) => {
   const userId = req.user.id; // Auth middleware ile gelir
 
-  console.log(userId);
-
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized" });
   }

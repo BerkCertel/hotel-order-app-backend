@@ -6,7 +6,7 @@ const User = require("../models/User");
 // Sipariş oluştur
 exports.createOrder = async (req, res) => {
   try {
-    const { items, roomNumber, orderUserName, qrCodeId } = req.body;
+    const { items, roomNumber, orderUserName, qrCodeId, TotalPrice } = req.body;
 
     if (!items || items.length === 0) {
       return res
@@ -23,6 +23,16 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "QR code ID is required." });
     }
 
+    if (!items || items.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "You must provide at least one item." });
+    }
+
+    if (TotalPrice <= 0 && !TotalPrice) {
+      return res.status(400).json({ message: "Invalid total price." });
+    }
+
     // QR kodu ve location kontrolü
     const qrcode = await QrCode.findById(qrCodeId);
     if (!qrcode) return res.status(400).json({ message: "QR Code bulunamadı" });
@@ -37,6 +47,7 @@ exports.createOrder = async (req, res) => {
       qrcodeLabel: qrcode.label,
       location: qrcode.location._id,
       status: "pending",
+      TotalPrice,
     });
 
     // CANLI YAYIN (Socket emit SADECE BURADA!)

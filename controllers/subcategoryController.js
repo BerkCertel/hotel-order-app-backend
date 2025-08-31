@@ -15,7 +15,7 @@ exports.getAllSubcategories = async (req, res) => {
 // Create a new subcategory
 exports.createSubcategory = async (req, res) => {
   try {
-    const { name, category, description } = req.body;
+    const { name, category, description, price } = req.body;
     if (!name || !category || !req.file) {
       return res
         .status(400)
@@ -43,6 +43,7 @@ exports.createSubcategory = async (req, res) => {
       image: uploadRes.secure_url,
       publicId: uploadRes.public_id,
       description,
+      price,
     });
     res.status(201).json(newSubcategory);
   } catch (error) {
@@ -79,7 +80,7 @@ exports.deleteSubcategory = async (req, res) => {
 exports.updateSubcategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, description } = req.body;
+    const { name, category, description, price } = req.body;
 
     const subcategory = await Subcategory.findById(id);
     if (!subcategory) {
@@ -116,6 +117,7 @@ exports.updateSubcategory = async (req, res) => {
     subcategory.description = description || subcategory.description;
     subcategory.image = image;
     subcategory.publicId = publicId;
+    if (typeof price !== "undefined") subcategory.price = price;
     await subcategory.save();
 
     res.status(200).json({

@@ -23,6 +23,10 @@ const SubcategorySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    price: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
