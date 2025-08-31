@@ -21,7 +21,8 @@ app.use(express.json());
 // CORS ayarları
 app.use(
   cors({
-    origin: process.env.CLIENT_URL,
+    // origin: process.env.CLIENT_URL,
+    origin: "https://hotel-order-app-frontend.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -47,7 +48,8 @@ app.use("/api/v1/order", orderRoutes);
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL, // "*" yerine env kullanmak daha güvenli
+    origin: "https://hotel-order-app-frontend.vercel.app",
+    // origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
