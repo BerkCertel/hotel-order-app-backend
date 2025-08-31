@@ -63,7 +63,8 @@ exports.login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // prod'da HTTPS zorunlu
-      sameSite: "lax",
+      // sameSite: "lax", // CSRF koruması için
+      sameSite: "None",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
       path: "/",
     });
@@ -83,7 +84,8 @@ exports.logout = (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    // sameSite: "lax",
+    sameSite: "None",
     path: "/",
   });
   res.status(200).json({ message: "Logout successful" });
@@ -334,7 +336,8 @@ exports.resetPassword = async (req, res) => {
     httpOnly: true,
     expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    // sameSite: "lax",
+    sameSite: "None",
     path: "/",
   });
 
