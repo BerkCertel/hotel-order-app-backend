@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const generateToken = require("../utils/generateToken");
+const { clearAuthCookie, setAuthCookie } = require("../utils/getCookieOptions");
 
 // // RegisterUser
 
@@ -59,15 +60,7 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user._id, user.role);
 
-    // YENİ: Cookie olarak JWT gönder!
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // prod'da HTTPS zorunlu
-      // sameSite: "lax", // CSRF koruması için
-      sameSite: "None",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 gün
-      path: "/",
-    });
+    setAuthCookie(res, token);
 
     res.status(200).json({
       id: user._id,
@@ -81,13 +74,7 @@ exports.login = async (req, res) => {
 
 // Logout User
 exports.logout = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    // sameSite: "lax",
-    sameSite: "None",
-    path: "/",
-  });
+  clearAuthCookie(res);
   res.status(200).json({ message: "Logout successful" });
 };
 
@@ -331,15 +318,7 @@ exports.resetPassword = async (req, res) => {
 
   // Otomatik JWT ile login (cookie setle)
   const token = generateToken(user._id, user.role);
-
-  res.cookie("token", token, {
-    httpOnly: true,
-    expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    secure: process.env.NODE_ENV === "production",
-    // sameSite: "lax",
-    sameSite: "None",
-    path: "/",
-  });
+  setAuthCookie(res, token);
 
   res.status(200).json({ user });
 };
