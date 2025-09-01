@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const nodemailer = require("nodemailer");
 const generateToken = require("../utils/generateToken");
-const { clearAuthCookie, setAuthCookie } = require("../utils/getCookieOptions");
+const { setAuthCookie, clearAuthCookie } = require("../utils/getCookieOptions");
 
 // // RegisterUser
 
@@ -318,6 +318,7 @@ exports.resetPassword = async (req, res) => {
 
   // Otomatik JWT ile login (cookie setle)
   const token = generateToken(user._id, user.role);
+
   setAuthCookie(res, token);
 
   res.status(200).json({ user });
