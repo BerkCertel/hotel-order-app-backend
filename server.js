@@ -14,6 +14,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const app = express();
+app.set("trust proxy", 1);
 
 // JSON body parser
 app.use(express.json());
