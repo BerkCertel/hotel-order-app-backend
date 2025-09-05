@@ -31,6 +31,7 @@ const OrderSchema = new mongoose.Schema(
       default: "pending",
     },
     TotalPrice: { type: Number, required: true },
+    orderNote: { type: String, required: false },
   },
   { timestamps: true }
 );

@@ -5,8 +5,17 @@ const User = require("../models/User");
 
 // Sipariş oluştur
 exports.createOrder = async (req, res) => {
+  console.log("createOrder called with body:", req.body);
+
   try {
-    const { items, roomNumber, orderUserName, qrCodeId, TotalPrice } = req.body;
+    const {
+      items,
+      roomNumber,
+      orderUserName,
+      qrCodeId,
+      TotalPrice,
+      orderNote,
+    } = req.body;
 
     if (!items || items.length === 0) {
       return res
@@ -48,13 +57,15 @@ exports.createOrder = async (req, res) => {
       location: qrcode.location._id,
       status: "pending",
       TotalPrice,
+      orderNote: orderNote || "",
     });
 
     // CANLI YAYIN (Socket emit SADECE BURADA!)
     req.app.get("io").emit("orderUpdate", { type: "new", order });
 
     res.status(201).json(order);
-  } catch (e) {
+  } catch (error) {
+    console.log(error.message);
     res.status(500).json({ message: "Sipariş oluşturulamadı." });
   }
 };
