@@ -35,7 +35,7 @@ exports.createQrCode = async (req, res) => {
     const qrId = new mongoose.Types.ObjectId();
 
     // 1. Linki oluştur
-    const qrData = `${process.env.CLIENT_URL}/tr/order/menu/${qrId}`;
+    const qrData = `${process.env.CLIENT_URL}/order/menu/${qrId}`;
 
     // 2. QR görselini oluştur
     const qrCodeImage = await QRCodeLib.toDataURL(qrData);
