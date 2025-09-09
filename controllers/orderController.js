@@ -38,7 +38,7 @@ exports.createOrder = async (req, res) => {
         .json({ message: "You must provide at least one item." });
     }
 
-    if (TotalPrice <= 0 && !TotalPrice) {
+    if (TotalPrice <= 0 && !items) {
       return res.status(400).json({ message: "Invalid total price." });
     }
 
