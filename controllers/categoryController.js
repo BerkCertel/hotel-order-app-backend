@@ -12,6 +12,30 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
+// Get all categories with their subcategories
+exports.getAllCategoriesWithSubcategories = async (req, res) => {
+  try {
+    // Tüm kategorileri getir
+    const categories = await Category.find();
+
+    // Her kategoriye ait subcategory'leri ekle
+    const categoriesWithSubcategories = await Promise.all(
+      categories.map(async (category) => {
+        const subcategories = await Subcategory.find({
+          category: category._id,
+        });
+        return {
+          ...category.toObject(), // Kategori bilgileri
+          subcategories, // Alt kategoriler
+        };
+      })
+    );
+
+    res.status(200).json(categoriesWithSubcategories);
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 // Create a new category
 exports.createCategory = async (req, res) => {
   try {
@@ -52,6 +76,7 @@ exports.createCategory = async (req, res) => {
 };
 
 // Delete a category
+// Delete a category and its subcategories
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -59,20 +84,33 @@ exports.deleteCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
     }
-    // Görseli sil
+
+    // Kategoriye bağlı tüm subcategory'leri bul ve sil
+    const subcategories = await Subcategory.find({ category: id });
+    for (const sub of subcategories) {
+      // Alt kategorinin görselini sil
+      if (sub.publicId) {
+        await cloudinary.uploader.destroy(sub.publicId);
+      }
+      await Subcategory.findByIdAndDelete(sub._id);
+    }
+
+    // Kategori görselini sil
     if (category.publicId) {
       await cloudinary.uploader.destroy(category.publicId);
     }
-    res
-      .status(200)
-      .json({ deletedCategory: category, message: "Category deleted." });
+
+    res.status(200).json({
+      deletedCategory: category,
+      deletedSubcategories: subcategories,
+      message: "Category and related subcategories deleted.",
+    });
   } catch (error) {
     res
       .status(500)
       .json({ message: "Failed to delete category", error: error.message });
   }
 };
-
 // Update a category
 exports.updateCategory = async (req, res) => {
   try {

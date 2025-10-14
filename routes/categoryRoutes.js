@@ -10,10 +10,15 @@ const {
   deleteCategory,
   getAllCategories,
   updateCategory,
+  getAllCategoriesWithSubcategories,
 } = require("../controllers/categoryController.js");
 
 // Tüm kategoriler
 router.get("/get-all-categories", getAllCategories);
+router.get(
+  "/get-all-categories-with-subcategories",
+  getAllCategoriesWithSubcategories
+);
 // Kategori oluştur (resim upload!)
 router.post(
   "/create-category",
