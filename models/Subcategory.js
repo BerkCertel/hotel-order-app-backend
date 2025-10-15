@@ -23,9 +23,17 @@ const SubcategorySchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    priceSchedule: {
+      activeFrom: { type: String, default: "" },
+      activeTo: { type: String, default: "" },
+    },
     price: {
       type: Number,
       default: 0,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
     },
   },
   { timestamps: true }

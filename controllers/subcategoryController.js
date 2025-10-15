@@ -1,12 +1,18 @@
 const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
 const { default: mongoose } = require("mongoose");
+const { getActualPrice } = require("../utils/SubcategoryUtils.js");
 
 // Get all subcategories
 exports.getAllSubcategories = async (req, res) => {
   try {
     const subcategories = await Subcategory.find().populate("category");
-    res.status(200).json(subcategories);
+    // Anlık fiyat ekle
+    const result = subcategories.map((sc) => ({
+      ...sc.toObject(),
+      displayPrice: getActualPrice(sc.price, sc.priceSchedule),
+    }));
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
@@ -15,12 +21,14 @@ exports.getAllSubcategories = async (req, res) => {
 // Create a new subcategory
 exports.createSubcategory = async (req, res) => {
   try {
-    const { name, category, description, price } = req.body;
+    const { name, category, description, price, priceSchedule, isActive } =
+      req.body;
     if (!name || !category || !req.file) {
       return res
         .status(400)
         .json({ message: "Name, category and image are required" });
     }
+
     // Cloudinary upload from buffer
     const streamifier = require("streamifier");
     const uploadFromBuffer = (buffer) => {
@@ -37,15 +45,39 @@ exports.createSubcategory = async (req, res) => {
     };
     const uploadRes = await uploadFromBuffer(req.file.buffer);
 
+    // Fiyat ve saat aralığı mantığı:
+    let actualPrice = 0;
+    let schedule = { activeFrom: "", activeTo: "" };
+    if (price > 0) {
+      actualPrice = price;
+      if (priceSchedule?.activeFrom && priceSchedule?.activeTo) {
+        schedule = {
+          activeFrom: priceSchedule.activeFrom,
+          activeTo: priceSchedule.activeTo,
+        };
+      }
+    }
+
     const newSubcategory = await Subcategory.create({
       name,
       category,
       image: uploadRes.secure_url,
       publicId: uploadRes.public_id,
       description,
-      price,
+      price: actualPrice,
+      priceSchedule: schedule,
+      isActive: typeof isActive === "boolean" ? isActive : true,
     });
-    res.status(201).json(newSubcategory);
+
+    // displayPrice ekle
+    const responseSubcategory = {
+      ...newSubcategory.toObject(),
+      displayPrice: getActualPrice(
+        newSubcategory.price,
+        newSubcategory.priceSchedule
+      ),
+    };
+    res.status(201).json(responseSubcategory);
   } catch (error) {
     res
       .status(500)
@@ -80,7 +112,8 @@ exports.deleteSubcategory = async (req, res) => {
 exports.updateSubcategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, category, description, price } = req.body;
+    const { name, category, description, price, priceSchedule, isActive } =
+      req.body;
 
     const subcategory = await Subcategory.findById(id);
     if (!subcategory) {
@@ -112,16 +145,42 @@ exports.updateSubcategory = async (req, res) => {
       publicId = uploadRes.public_id;
     }
 
+    // Fiyat ve saat aralığı mantığı:
+    let actualPrice = 0;
+    let schedule = { activeFrom: "", activeTo: "" };
+    if (price > 0) {
+      actualPrice = price;
+      if (priceSchedule?.activeFrom && priceSchedule?.activeTo) {
+        schedule = {
+          activeFrom: priceSchedule.activeFrom,
+          activeTo: priceSchedule.activeTo,
+        };
+      }
+    }
+
     subcategory.name = name || subcategory.name;
     subcategory.category = category || subcategory.category;
     subcategory.description = description || subcategory.description;
     subcategory.image = image;
     subcategory.publicId = publicId;
-    if (typeof price !== "undefined") subcategory.price = price;
+    subcategory.price =
+      typeof price !== "undefined" ? actualPrice : subcategory.price;
+    subcategory.priceSchedule = schedule;
+    subcategory.isActive =
+      typeof isActive === "boolean" ? isActive : subcategory.isActive;
+
     await subcategory.save();
 
+    const responseSubcategory = {
+      ...subcategory.toObject(),
+      displayPrice: getActualPrice(
+        subcategory.price,
+        subcategory.priceSchedule
+      ),
+    };
+
     res.status(200).json({
-      updatedSubcategory: subcategory,
+      updatedSubcategory: responseSubcategory,
       message: "Subcategory updated successfully.",
     });
   } catch (error) {

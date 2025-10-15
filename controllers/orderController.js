@@ -2,11 +2,11 @@ const Order = require("../models/Orders");
 const QrCode = require("../models/QrCode");
 const Location = require("../models/Location");
 const User = require("../models/User");
+const { getActualPrice } = require("../utils/SubcategoryUtils");
+const Subcategory = require("../models/Subcategory");
 
 // Sipariş oluştur
 exports.createOrder = async (req, res) => {
-  console.log("createOrder called with body:", req.body);
-
   try {
     const {
       items,
@@ -16,6 +16,8 @@ exports.createOrder = async (req, res) => {
       TotalPrice,
       orderNote,
     } = req.body;
+
+    console.log(items);
 
     if (!items || items.length === 0) {
       return res
@@ -48,22 +50,45 @@ exports.createOrder = async (req, res) => {
     if (!qrcode.location)
       return res.status(400).json({ message: "QR kodun location'u yok" });
 
+    let checkedItems = [];
+    let totalPrice = 0;
+    let priceChanged = false;
+
+    for (const item of items) {
+      const sc = await Subcategory.findById(item._id);
+      if (!sc) {
+        return res
+          .status(400)
+          .json({ message: `Item not found: ${item.name}` });
+      }
+      const displayPrice = getActualPrice(sc.price, sc.priceSchedule);
+      if (item.price !== displayPrice) priceChanged = true;
+      // Ürün ücretsizse miktarı sıfırla veya doğrudan sepete ekle
+      checkedItems.push({
+        ...item,
+        name: sc.name,
+        price: displayPrice,
+        total: displayPrice * (item.quantity || 1),
+      });
+      totalPrice += displayPrice * (item.quantity || 1);
+    }
+
     const order = await Order.create({
-      items,
+      items: checkedItems,
       roomNumber,
       orderUserName,
       qrcodeId: qrcode._id,
       qrcodeLabel: qrcode.label,
       location: qrcode.location._id,
       status: "pending",
-      TotalPrice,
+      TotalPrice: totalPrice,
       orderNote: orderNote || "",
     });
 
     // CANLI YAYIN (Socket emit SADECE BURADA!)
     req.app.get("io").emit("orderUpdate", { type: "new", order });
 
-    res.status(201).json(order);
+    res.status(201).json({ order, priceChanged });
   } catch (error) {
     console.log(error.message);
     res.status(500).json({ message: "Sipariş oluşturulamadı." });

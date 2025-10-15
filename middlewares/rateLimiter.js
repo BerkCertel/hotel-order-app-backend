@@ -24,7 +24,7 @@ const apiLimiter = rateLimit({
     res.set("Retry-After", retryAfter);
     res.status(429).json({
       message: "Çok fazla istek yaptınız. Lütfen daha sonra tekrar deneyin.",
-      retryAfter, // saniye cinsinden
+      retryAfter,
     });
   },
   standardHeaders: true,

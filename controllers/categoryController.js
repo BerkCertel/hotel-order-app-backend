@@ -1,6 +1,7 @@
 const Category = require("../models/Category.js");
 const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
+const { getActualPrice } = require("../utils/SubcategoryUtils.js");
 
 // Get all categories
 exports.getAllCategories = async (req, res) => {
@@ -15,24 +16,28 @@ exports.getAllCategories = async (req, res) => {
 // Get all categories with their subcategories
 exports.getAllCategoriesWithSubcategories = async (req, res) => {
   try {
-    // Tüm kategorileri getir
     const categories = await Category.find();
 
-    // Her kategoriye ait subcategory'leri ekle
     const categoriesWithSubcategories = await Promise.all(
       categories.map(async (category) => {
         const subcategories = await Subcategory.find({
           category: category._id,
         });
+        // Her subcategory için displayPrice ekle
+        const subcategoriesWithPrice = subcategories.map((sc) => ({
+          ...sc.toObject(),
+          displayPrice: getActualPrice(sc.price, sc.priceSchedule),
+        }));
         return {
-          ...category.toObject(), // Kategori bilgileri
-          subcategories, // Alt kategoriler
+          ...category.toObject(),
+          subcategories: subcategoriesWithPrice,
         };
       })
     );
 
     res.status(200).json(categoriesWithSubcategories);
   } catch (error) {
+    console.error("getAllCategoriesWithSubcategories error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -75,7 +80,6 @@ exports.createCategory = async (req, res) => {
   }
 };
 
-// Delete a category
 // Delete a category and its subcategories
 exports.deleteCategory = async (req, res) => {
   try {
