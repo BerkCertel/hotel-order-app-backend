@@ -1,19 +1,54 @@
 const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
 const { default: mongoose } = require("mongoose");
-const { getActualPrice } = require("../utils/SubcategoryUtils.js");
+const {
+  getActualPrice,
+  normalizePriceSchedule,
+} = require("../utils/SubcategoryUtils.js");
+
+// // Get all subcategories
+// exports.getAllSubcategories = async (req, res) => {
+//   try {
+//     const subcategories = await Subcategory.find().populate("category");
+//     // Anlık fiyat ekle
+//     const result = subcategories.map((sc) => ({
+//       ...sc.toObject(),
+//       displayPrice: getActualPrice(sc.price, sc.priceSchedule),
+//     }));
+//     res.status(200).json(result);
+//   } catch (error) {
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
 
 // Get all subcategories
 exports.getAllSubcategories = async (req, res) => {
   try {
-    const subcategories = await Subcategory.find().populate("category");
-    // Anlık fiyat ekle
-    const result = subcategories.map((sc) => ({
-      ...sc.toObject(),
-      displayPrice: getActualPrice(sc.price, sc.priceSchedule),
-    }));
+    // .lean() ile plain JS objesi alıyoruz
+    const subcategories = await Subcategory.find().populate("category").lean();
+
+    const result = subcategories.map((sc) => {
+      const schedule = normalizePriceSchedule(sc.priceSchedule);
+      let displayPrice = 0;
+      try {
+        displayPrice = getActualPrice(sc.price, schedule);
+      } catch (err) {
+        console.error(
+          "getAllSubcategories: getActualPrice error for id:",
+          sc._id,
+          err
+        );
+        displayPrice = 0;
+      }
+      return {
+        ...sc,
+        displayPrice,
+      };
+    });
+
     res.status(200).json(result);
   } catch (error) {
+    console.error("getAllSubcategories error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -108,7 +143,6 @@ exports.deleteSubcategory = async (req, res) => {
   }
 };
 
-// Update a subcategory
 exports.updateSubcategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -118,6 +152,43 @@ exports.updateSubcategory = async (req, res) => {
     const subcategory = await Subcategory.findById(id);
     if (!subcategory) {
       return res.status(404).json({ message: "Subcategory not found." });
+    }
+
+    if (price && isNaN(price)) {
+      return res.status(400).json({ message: "Price must be a valid number." });
+    }
+
+    if (price < 0) {
+      return res.status(400).json({ message: "Price cannot be negative." });
+    }
+
+    if (price === undefined || price === null || price === "") {
+      price = subcategory.price;
+    }
+
+    if (priceSchedule) {
+      if (
+        (priceSchedule.activeFrom && !priceSchedule.activeTo) ||
+        (!priceSchedule.activeFrom && priceSchedule.activeTo)
+      ) {
+        return res.status(400).json({
+          message:
+            "Başlangıç ve bitiş saatleri birlikte sağlanmalıdır yada birlikte kaldırılmalıdır.",
+        });
+      }
+
+      if (
+        (priceSchedule.activeFrom === undefined &&
+          priceSchedule.activeTo === undefined) ||
+        (priceSchedule.activeFrom === null &&
+          priceSchedule.activeTo === null) ||
+        (priceSchedule.activeFrom && priceSchedule.activeTo === "") ||
+        (priceSchedule.activeFrom === "" && priceSchedule.activeTo)
+      ) {
+        return res.status(400).json({
+          message: "Both activeFrom and activeTo must be provided.",
+        });
+      }
     }
 
     // Görsel güncellemesi

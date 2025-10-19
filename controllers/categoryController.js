@@ -1,7 +1,10 @@
 const Category = require("../models/Category.js");
 const Subcategory = require("../models/Subcategory.js");
 const cloudinary = require("../config/cloudinary.js");
-const { getActualPrice } = require("../utils/SubcategoryUtils.js");
+const {
+  getActualPrice,
+  normalizePriceSchedule,
+} = require("../utils/SubcategoryUtils.js");
 
 // Get all categories
 exports.getAllCategories = async (req, res) => {
@@ -13,23 +16,68 @@ exports.getAllCategories = async (req, res) => {
   }
 };
 
+// // Get all categories with their subcategories
+// exports.getAllCategoriesWithSubcategories = async (req, res) => {
+//   try {
+//     const categories = await Category.find();
+
+//     const categoriesWithSubcategories = await Promise.all(
+//       categories.map(async (category) => {
+//         const subcategories = await Subcategory.find({
+//           category: category._id,
+//         });
+//         // Her subcategory için displayPrice ekle
+//         const subcategoriesWithPrice = subcategories.map((sc) => ({
+//           ...sc.toObject(),
+//           displayPrice: getActualPrice(sc.price, sc.priceSchedule),
+//         }));
+//         return {
+//           ...category.toObject(),
+//           subcategories: subcategoriesWithPrice,
+//         };
+//       })
+//     );
+
+//     res.status(200).json(categoriesWithSubcategories);
+//   } catch (error) {
+//     console.error("getAllCategoriesWithSubcategories error:", error);
+//     res.status(500).json({ message: "Internal server error" });
+//   }
+// };
+
 // Get all categories with their subcategories
 exports.getAllCategoriesWithSubcategories = async (req, res) => {
   try {
-    const categories = await Category.find();
+    const categories = await Category.find().lean();
 
     const categoriesWithSubcategories = await Promise.all(
       categories.map(async (category) => {
         const subcategories = await Subcategory.find({
           category: category._id,
+        }).lean();
+
+        const subcategoriesWithPrice = subcategories.map((sc) => {
+          const schedule = normalizePriceSchedule(sc.priceSchedule);
+          let displayPrice = 0;
+          try {
+            displayPrice = getActualPrice(sc.price, schedule);
+          } catch (err) {
+            console.error(
+              "getAllCategoriesWithSubcategories: getActualPrice error for subcategory id:",
+              sc._id,
+              err
+            );
+            displayPrice = 0;
+          }
+          return {
+            ...sc,
+            priceSchedule: schedule ?? { activeFrom: "", activeTo: "" },
+            displayPrice,
+          };
         });
-        // Her subcategory için displayPrice ekle
-        const subcategoriesWithPrice = subcategories.map((sc) => ({
-          ...sc.toObject(),
-          displayPrice: getActualPrice(sc.price, sc.priceSchedule),
-        }));
+
         return {
-          ...category.toObject(),
+          ...category,
           subcategories: subcategoriesWithPrice,
         };
       })
@@ -41,6 +89,7 @@ exports.getAllCategoriesWithSubcategories = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 // Create a new category
 exports.createCategory = async (req, res) => {
   try {
