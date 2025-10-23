@@ -17,8 +17,6 @@ exports.createOrder = async (req, res) => {
       orderNote,
     } = req.body;
 
-    console.log(items);
-
     if (!items || items.length === 0) {
       return res
         .status(400)
