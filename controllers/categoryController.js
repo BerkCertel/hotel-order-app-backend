@@ -5,6 +5,7 @@ const {
   getActualPrice,
   normalizePriceSchedule,
 } = require("../utils/SubcategoryUtils.js");
+const { translateText } = require("../utils/translator.js");
 
 // Get all categories
 exports.getAllCategories = async (req, res) => {
@@ -15,35 +16,6 @@ exports.getAllCategories = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// // Get all categories with their subcategories
-// exports.getAllCategoriesWithSubcategories = async (req, res) => {
-//   try {
-//     const categories = await Category.find();
-
-//     const categoriesWithSubcategories = await Promise.all(
-//       categories.map(async (category) => {
-//         const subcategories = await Subcategory.find({
-//           category: category._id,
-//         });
-//         // Her subcategory için displayPrice ekle
-//         const subcategoriesWithPrice = subcategories.map((sc) => ({
-//           ...sc.toObject(),
-//           displayPrice: getActualPrice(sc.price, sc.priceSchedule),
-//         }));
-//         return {
-//           ...category.toObject(),
-//           subcategories: subcategoriesWithPrice,
-//         };
-//       })
-//     );
-
-//     res.status(200).json(categoriesWithSubcategories);
-//   } catch (error) {
-//     console.error("getAllCategoriesWithSubcategories error:", error);
-//     res.status(500).json({ message: "Internal server error" });
-//   }
-// };
 
 // Get all categories with their subcategories
 exports.getAllCategoriesWithSubcategories = async (req, res) => {
@@ -97,6 +69,7 @@ exports.createCategory = async (req, res) => {
     if (!name || !req.file) {
       return res.status(400).json({ message: "Name and image are required" });
     }
+
     // Cloudinary upload from buffer
     const streamifier = require("streamifier");
     const uploadFromBuffer = (buffer) => {
@@ -116,11 +89,35 @@ exports.createCategory = async (req, res) => {
     };
     const uploadRes = await uploadFromBuffer(req.file.buffer);
 
+    // Prepare target languages to translate into (keys match your schema)
+    const targets = {
+      en: "en",
+      ru: "ru",
+      de: "de",
+      fr: "fr",
+    };
+
+    // Translate all target languages in parallel
+    const translationEntries = await Promise.all(
+      Object.entries(targets).map(async ([key, langCode]) => {
+        const translated = await translateText(name, langCode);
+        // If translator returns empty for English, fallback to original name
+        const value = translated || (key === "en" ? name : "");
+        return [key, value];
+      })
+    );
+
+    const translations = Object.fromEntries(translationEntries);
+
     const newCategory = await Category.create({
       name,
+      translations,
       image: uploadRes.secure_url,
       publicId: uploadRes.public_id,
     });
+
+    console.log(newCategory);
+
     res.status(201).json(newCategory);
   } catch (error) {
     res
@@ -164,15 +161,72 @@ exports.deleteCategory = async (req, res) => {
       .json({ message: "Failed to delete category", error: error.message });
   }
 };
+
 // Update a category
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
     const { name } = req.body;
 
+    let translations = req.body.translations;
+
+    console.log(translations);
+
+    if (!translations) {
+      return res.status(400).json({ message: "Translations are required." });
+    }
+
+    // Eğer translations bir string ise parse et (frontend genelde JSON.stringify ile gönderir)
+    if (typeof translations === "string") {
+      try {
+        translations = JSON.parse(translations);
+      } catch (err) {
+        return res
+          .status(400)
+          .json({ message: "Invalid translations format." });
+      }
+    }
+
     const category = await Category.findById(id);
     if (!category) {
       return res.status(404).json({ message: "Category not found." });
+    }
+
+    if (!translations) {
+      return res.status(400).json({ message: "Translations are required." });
+    }
+
+    // Güvenli trim: önce string olduğundan emin ol
+    const getTrimmed = (val) => (typeof val === "string" ? val.trim() : "");
+
+    if (!getTrimmed(translations.tr)) {
+      return res
+        .status(400)
+        .json({ message: "Turkish translation is required." });
+    }
+
+    if (!getTrimmed(translations.de)) {
+      return res
+        .status(400)
+        .json({ message: "German translation is required." });
+    }
+
+    if (!getTrimmed(translations.en)) {
+      return res
+        .status(400)
+        .json({ message: "English translation is required." });
+    }
+
+    if (!getTrimmed(translations.ru)) {
+      return res
+        .status(400)
+        .json({ message: "Russian translation is required." });
+    }
+
+    if (!getTrimmed(translations.fr)) {
+      return res
+        .status(400)
+        .json({ message: "French translation is required." });
     }
 
     // Görsel güncellemesi
@@ -203,6 +257,7 @@ exports.updateCategory = async (req, res) => {
     category.name = name || category.name;
     category.image = image;
     category.publicId = publicId;
+    category.translations = translations;
     await category.save();
 
     res.status(200).json({
